@@ -24,18 +24,34 @@ public final class Customer implements Runnable {
         facility.activity(customerId, "ARRIVAL", "Entrance", "Customer arrived", 0, 0, true);
 
         try {
+            // the customer main workflow  customer arrives , wash, dry and  pay
             wash();
             dry();
             pay();
-
+            /** total time  taken by the customer  */
             facility.customerCompleted(customerId, System.nanoTime() - arrivalNanos);
+            // shows the events log
             facility.log(customerId, "EXIT", "Customer completed the full laundry journey");
+//            shows completed activity
             facility.activity(customerId, "COMPLETED", "Exit", "Completed", 0, 0, false);
+
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             facility.customerInterrupted(customerId);
-            facility.activity(customerId, "STOPPED", "", "Thread interrupted safely", 0, 0, false);
-            facility.log(customerId, "SYSTEM", "Customer thread interrupted and terminated safely");
+            // shows state of customer stopped in the GUI
+            facility.activity(customerId, "STOPPED", "",
+                    "Thread interrupted safely",
+                    0, 0, false);
+            //            thread does not kill forcefully but terminate safely
+            facility.log(customerId, "SYSTEM",
+                    "Customer thread interrupted and terminated safely");
+
+
+            /** it handles the excepted run time errors like
+             IllegalStateException
+             NullPointerException
+             IllegalArgumentException*/
+
         } catch (RuntimeException e) {
             facility.customerInterrupted(customerId);
             facility.activity(customerId, "ERROR", "", e.getMessage() == null ? "Unexpected error" : e.getMessage(), 0, 0, false);
@@ -44,22 +60,34 @@ public final class Customer implements Runnable {
     }
 
     private void wash() throws InterruptedException {
+        // continue the process till interrupted  occurs
         while (!Thread.currentThread().isInterrupted()) {
-            facility.activity(customerId, "WAITING", "Washer Queue", "Waiting because washer capacity may be full", 0, 0, true);
+            facility.activity(customerId, "WAITING", "Washer Queue",
+                    "Waiting because washer capacity may be full",
+                    0, 0, true);
+
+            // shows waiting event in console log
             facility.log(customerId, "QUEUE", "Waiting for an available washing machine");
+
             WashingMachine washer = facility.acquireWasher(customerId);
+//            updates the current washer uses
             facility.washerAcquired();
 
+
             int durationMs = RandomUtils.randomInclusive(SimulationConfig.WASH_MIN_MS, SimulationConfig.WASH_MAX_MS);
+
             long start = System.nanoTime();
-            long end = start + durationMs * 1_000_000L;
-            facility.setWasherTiming(washer, start, end);
+
+            long end = start + durationMs * 1_000_000L;  // in nano second
+
+            facility.setWasherTiming(washer, start, end); // Washer timing set
             facility.activity(customerId, "WASHING", washer.getId(), "Washing clothes", start, end, true);
             facility.log(customerId, "WASHER", "Acquired " + washer.getId());
-            facility.log(customerId, "WASHING", String.format("Started washing for %.2f seconds", durationMs / 1000.0));
 
+            facility.log(customerId, "WASHING", String.format("Started washing for %.2f seconds", durationMs / 1000.0));
+              // used sleep ()
             try {
-                Thread.sleep(durationMs);
+                Thread.sleep(durationMs); // sleep current thread during washing time
             } catch (InterruptedException e) {
                 facility.releaseWasher(washer);
                 throw e;
@@ -75,7 +103,7 @@ public final class Customer implements Runnable {
                 facility.log(customerId, "RETRY", "Retrying washing after washer failure");
                 continue;
             }
-
+               //Successful washing
             facility.releaseWasher(washer);
             facility.log(customerId, "WASHING", "Completed washing and released " + washer.getId());
             return;
@@ -84,9 +112,12 @@ public final class Customer implements Runnable {
     }
 
     private void dry() throws InterruptedException {
+        // dryer queue
         facility.activity(customerId, "WAITING", "Dryer Queue", "Waiting because dryer capacity may be full", 0, 0, true);
         facility.log(customerId, "QUEUE", "Waiting for an available dryer");
+//        it allocates the synchronized resource
         Dryer dryer = facility.acquireDryer(customerId);
+//        Current dryer usage increase
         facility.dryerAcquired();
 
         int durationMs = RandomUtils.randomInclusive(SimulationConfig.DRY_MIN_MS, SimulationConfig.DRY_MAX_MS);
@@ -95,10 +126,11 @@ public final class Customer implements Runnable {
         facility.setDryerTiming(dryer, start, end);
         facility.activity(customerId, "DRYING", dryer.getId(), "Drying clothes", start, end, true);
         facility.log(customerId, "DRYER", "Acquired " + dryer.getId());
+        // used for countdown
         facility.log(customerId, "DRYING", String.format("Started drying for %.2f seconds", durationMs / 1000.0));
 
         try {
-            Thread.sleep(durationMs);
+            Thread.sleep(durationMs); // current customer thread sleep
         } catch (InterruptedException e) {
             facility.releaseDryer(dryer);
             throw e;
@@ -117,8 +149,9 @@ public final class Customer implements Runnable {
             facility.log(customerId, "QUEUE", reason);
 
             PaymentKiosk kiosk = facility.acquirePaymentKiosk(customerId);
-            facility.paymentAcquired();
+            facility.paymentAcquired();// Current active payment count update
 
+//            Random payment duration
             int durationMs = RandomUtils.randomInclusive(SimulationConfig.PAYMENT_MIN_MS, SimulationConfig.PAYMENT_MAX_MS);
             long start = System.nanoTime();
             long end = start + durationMs * 1_000_000L;
@@ -128,13 +161,14 @@ public final class Customer implements Runnable {
             facility.log(customerId, "PAYMENT", String.format("Started payment for %.2f seconds", durationMs / 1000.0));
 
             try {
-                Thread.sleep(durationMs);
+                Thread.sleep(durationMs);  // thread sleep during the payments
             } catch (InterruptedException e) {
                 facility.releasePaymentKiosk(kiosk);
                 throw e;
             }
 
             if (!facility.isCongestionMode() && RandomUtils.chance(SimulationConfig.PAYMENT_FAILURE_PROBABILITY)) {
+//                Failure statistic update
                 facility.paymentFailed();
                 facility.log(customerId, "FAILURE", kiosk.getId() + " failed during payment (5% event)");
                 facility.activity(customerId, "RETRYING", kiosk.getId(), "Payment failure - retrying after 2 seconds", System.nanoTime(),
