@@ -23,53 +23,83 @@ import java.util.concurrent.locks.ReentrantLock;
  * Shared-resource coordinator. Semaphore controls capacity; locks protect
  * safe selection and mutation of individual resource objects.
  */
+
 public final class ResourceManager {
+
+
     private final List<WashingMachine> washers = new ArrayList<>();
     private final List<Dryer> dryers = new ArrayList<>();
     private final List<PaymentKiosk> kiosks = new ArrayList<>();
 
+  //resource-capacity control
+//    maximum 6 washer permits
     private final Semaphore washerSemaphore = new Semaphore(SimulationConfig.WASHER_COUNT, true);
     private final Semaphore dryerSemaphore = new Semaphore(SimulationConfig.DRYER_COUNT, true);
     private final Semaphore kioskSemaphore = new Semaphore(SimulationConfig.PAYMENT_KIOSK_COUNT, true);
 
+
+    /** ArrayList is not thread-safe by itself.
+     *  Therefore, the corresponding ReentrantLock
+     *  is used whenever the list is accessed.*/
+
+    //ReentrantLock identifies and safely selects the specific free washer
     private final ReentrantLock washerLock = new ReentrantLock(true);
     private final ReentrantLock dryerLock = new ReentrantLock(true);
     private final ReentrantLock kioskLock = new ReentrantLock(true);
 
+//Queue fileds
+    // It allows you to add and remove elements from both ends.
+    // helps to track waiting customers
     private final Deque<String> washerQueue = new ConcurrentLinkedDeque<>();
     private final Deque<String> dryerQueue = new ConcurrentLinkedDeque<>();
     private final Deque<String> paymentQueue = new ConcurrentLinkedDeque<>();
 
-    private final ScheduledExecutorService repairExecutor = Executors.newScheduledThreadPool(3, r -> {
+    /**  ScheduledExecutorService is used to schedule tasks to run after a
+     * specific delay or at regular intervals.*/
+    private final ScheduledExecutorService repairExecutor = Executors.newScheduledThreadPool(3, r
+            -> {
         Thread t = new Thread(r, "Resource-Repair");
-        t.setDaemon(true);
+        t.setDaemon(true); //repair background thread
         return t;
     });
 
+//     volatile = this state can be read write by multiple thread
+
     private volatile boolean congestionMode;
+
+    /*
+     * Ensure that repair tasks scheduled by a previous simulation do not
+     * continue running and affect the state of the new simulation.
+     */
     private final AtomicInteger lifecycleEpoch = new AtomicInteger();
 
+
+    // actual resources create
     public ResourceManager() {
         for (int i = 1; i <= SimulationConfig.WASHER_COUNT; i++) washers.add(new WashingMachine("Washer-" + i));
         for (int i = 1; i <= SimulationConfig.DRYER_COUNT; i++) dryers.add(new Dryer("Dryer-" + i));
         for (int i = 1; i <= SimulationConfig.PAYMENT_KIOSK_COUNT; i++) kiosks.add(new PaymentKiosk("Kiosk-" + i));
     }
 
+// gives washer to the customer safely
     public WashingMachine acquireWasher(String customerId) throws InterruptedException {
         boolean permitAcquired = false;
+        // customers add to the waiting list
         washerQueue.addLast(customerId);
         try {
-            washerSemaphore.acquire();
+            washerSemaphore.acquire(); // resource can be bloc here
             permitAcquired = true;
             washerLock.lockInterruptibly();
             try {
                 WashingMachine washer = findFreeWasher();
-                if (washer == null) throw new IllegalStateException("Washer semaphore/resource state mismatch");
+                if (washer == null) throw new IllegalStateException("Washer semaphore/resource state mismatch"); // semaphore gives
+                // permits but there is not any free washer
                 markBusy(washer, customerId, "WASHING");
                 return washer;
             } finally {
                 washerLock.unlock();
             }
+
         } catch (InterruptedException ex) {
             if (permitAcquired) washerSemaphore.release();
             throw ex;
@@ -80,7 +110,7 @@ public final class ResourceManager {
             washerQueue.removeFirstOccurrence(customerId);
         }
     }
-
+    // Dryer queue → Semaphore(4) → Lock → find free dryer → mark BUSY → return selected dryer
     public Dryer acquireDryer(String customerId) throws InterruptedException {
         boolean permitAcquired = false;
         dryerQueue.addLast(customerId);
@@ -106,6 +136,8 @@ public final class ResourceManager {
             dryerQueue.removeFirstOccurrence(customerId);
         }
     }
+
+    // Queue → Semaphore(2) → kioskLock → find free kiosk → mark BUSY → return selected kiosk
 
     public PaymentKiosk acquirePaymentKiosk(String customerId) throws InterruptedException {
         boolean permitAcquired = false;

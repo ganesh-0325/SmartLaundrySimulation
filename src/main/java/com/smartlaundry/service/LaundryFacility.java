@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /** Main simulation coordinator. Business logic stays outside the Swing layer. */
+
 public final class LaundryFacility {
     private final ResourceManager resources = new ResourceManager();
     private final StatisticsManager statistics = new StatisticsManager();
@@ -27,6 +28,7 @@ public final class LaundryFacility {
     private volatile Thread dispatcherThread;
     private volatile Thread ownerResponseThread;
     private volatile boolean stopRequested;
+
 
     public synchronized void start(boolean congestionMode) {
         if (isRunning()) return;
