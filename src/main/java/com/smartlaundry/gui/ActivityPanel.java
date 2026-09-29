@@ -19,7 +19,7 @@ public final class ActivityPanel extends JPanel {
             new Object[]{"Customer", "State", "Resource", "Time", "Reason"}, 0) {
         @Override public boolean isCellEditable(int row, int column) { return false; }
     };
-    private final JTable table = new JTable(model);
+    private final JTable table = new JTable(model);// conntect to the model
 
     public ActivityPanel() {
         setLayout(new BorderLayout(0, 8));
@@ -35,7 +35,7 @@ public final class ActivityPanel extends JPanel {
         title.setForeground(UiTheme.TEXT);
         add(title, BorderLayout.NORTH);
 
-        table.setFillsViewportHeight(true);
+        table.setFillsViewportHeight(true); // scrool pannel bhitra available height acquire garxa
         table.setRowHeight(24);
         table.setFont(UiTheme.LABEL);
         table.getTableHeader().setFont(UiTheme.LABEL_BOLD);
@@ -47,7 +47,7 @@ public final class ActivityPanel extends JPanel {
         table.getColumnModel().getColumn(2).setPreferredWidth(100);
         table.getColumnModel().getColumn(3).setPreferredWidth(80);
         table.getColumnModel().getColumn(4).setPreferredWidth(220);
-        add(new JScrollPane(table), BorderLayout.CENTER);
+        add(new JScrollPane(table), BorderLayout.CENTER); // scroolabe areaa ma place garxa
     }
 
     public void refresh(LaundryFacility facility) {

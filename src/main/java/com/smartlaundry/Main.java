@@ -31,6 +31,7 @@ public final class Main {
         facility.start(congestion);
         while (facility.isRunning()) Thread.sleep(500);
 
+
         System.out.println();
         System.out.println("============================================================");
         System.out.println("SMART LAUNDRY - FINAL STATISTICS");

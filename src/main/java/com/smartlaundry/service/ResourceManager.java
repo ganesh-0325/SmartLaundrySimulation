@@ -24,12 +24,14 @@ import java.util.concurrent.locks.ReentrantLock;
  * safe selection and mutation of individual resource objects.
  */
 
+
 public final class ResourceManager {
 
 
     private final List<WashingMachine> washers = new ArrayList<>();
     private final List<Dryer> dryers = new ArrayList<>();
     private final List<PaymentKiosk> kiosks = new ArrayList<>();
+
 
   //resource-capacity control
 //    maximum 6 washer permits

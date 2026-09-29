@@ -22,25 +22,28 @@ public final class LaundryFacility {
     private final ResourceManager resources = new ResourceManager();
     private final StatisticsManager statistics = new StatisticsManager();
     private final SimulationState state = new SimulationState();
-    private final Logger logger = new Logger(state);
+    private final Logger logger = new Logger(state);// simulation record rakxa
     private final List<Thread> customerThreads = new CopyOnWriteArrayList<>();
 
-    private volatile Thread dispatcherThread;
+    private volatile Thread dispatcherThread; // handles the customer thread creation
     private volatile Thread ownerResponseThread;
     private volatile boolean stopRequested;
 
 
+
+//    simulation starts from here
     public synchronized void start(boolean congestionMode) {
         if (isRunning()) return;
         if (dispatcherThread != null && dispatcherThread.isAlive()) return;
         stopRequested = false;
+//        sab simulation  must be clean
         customerThreads.clear();
         statistics.reset();
         resources.reset();
         state.clearForNewRun();
         state.start(congestionMode);
 
-        if (congestionMode) {
+        if (congestionMode) {// both payment method unable
             resources.enableCongestionMode();
             log("SYSTEM", "SYSTEM", "CONGESTION MODE STARTED - both payment kiosks are failed for the day");
         } else {
@@ -145,6 +148,7 @@ public final class LaundryFacility {
         statistics.customerArrived();
         log(id, "ARRIVAL", "Customer arrived at the facility");
     }
+
 
     public void customerCompleted(String id, long durationNanos) {
         statistics.customerServed(durationNanos);
