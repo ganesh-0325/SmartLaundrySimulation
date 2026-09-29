@@ -2,9 +2,9 @@ package com.smartlaundry.gui;
 
 import java.awt.Color;
 import java.awt.Font;
-
+ // all the theme  like color text button , layout are
 public final class UiTheme {
-    private UiTheme() { }
+
 
     public static final Color APP_BG = new Color(243, 245, 248);
     public static final Color SURFACE = Color.WHITE;
