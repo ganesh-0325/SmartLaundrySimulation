@@ -1,71 +1,204 @@
-# Smart Laundry Facility Simulation
+Smart Laundry Facility Simulation
 
-Concurrent Programming - CT074-3-2
+Concurrent Programming – CT074-3-2
 
-A Java Swing implementation of the Smart Laundry Facility Simulation. The project follows the assignment values: 50 customers, 6 washers, 4 dryers, 2 payment kiosks, random 0–3 second arrivals, 4–6 second washing, 3–5 second drying, 1–2 second payment, 5% washer/payment failures, payment retry after 2 seconds, thread-safe statistics, and a congestion-mode bonus scenario.
+A Java Swing implementation of the Smart Laundry Facility Simulation using Java concurrency features and java.util.concurrent facilities.
 
-## IntelliJ IDEA
+The system simulates 50 customers, 6 washers, 4 dryers, and 2 payment kiosks. It includes random customer arrivals, configurable washing/drying/payment durations, probabilistic washer and payment failures, retry handling, thread-safe statistics, and a congestion-mode scenario with owner response.
 
-1. Extract the project.
-2. Open the `SmartLaundrySimulation` folder in IntelliJ IDEA.
-3. Select JDK 17 or newer (JDK 21 recommended).
-4. Right-click `src/main/java` → **Mark Directory as → Sources Root** if IntelliJ does not detect it automatically.
-5. Open `src/main/java/com/smartlaundry/Main.java`.
-6. Run `Main.main()`.
+IntelliJ IDEA
 
-No Maven or Gradle dependency is required. It is a standard Java project using Swing and `java.util.concurrent`.
+Extract the project.
 
-## Console modes
+Open the SmartLaundrySimulation folder in IntelliJ IDEA.
 
-Normal:
+Select JDK 17 or newer. JDK 21 is recommended.
 
-```powershell
+If required, right-click src/main/java and select Mark Directory as → Sources Root.
+
+Open src/main/java/com/smartlaundry/Main.java.
+
+Run Main.main().
+
+No Maven or Gradle dependency is required. The project is a standard Java application using Swing and java.util.concurrent.
+
+Console Modes
+
+Normal Mode
+
 javac -encoding UTF-8 -d out (Get-ChildItem -Recurse -Filter *.java).FullName
 java -cp out com.smartlaundry.Main --console
-```
 
-Bonus congestion:
+Congestion Mode
 
-```powershell
 java -cp out com.smartlaundry.Main --console --congestion
-```
 
-## Concurrency mapping
+Concurrency Mapping
 
-- Customer: `Runnable` + `Thread`
-- Washers: `Semaphore(6)` + `ReentrantLock`
-- Dryers: `Semaphore(4)` + `ReentrantLock`
-- Payment kiosks: `Semaphore(2)` + `ReentrantLock`
-- Statistics: `AtomicInteger` / `AtomicLong`
-- Random values: `ThreadLocalRandom`
-- GUI refresh: Swing `Timer` on the Event Dispatch Thread
+Component
 
-## Important implementation assumptions
+Concurrency Technique
 
-1. The assignment does not fully define how a failed washer is repaired. This implementation temporarily removes a failed washer from service, repairs it after 1 second, and allows the customer to retry.
-2. A normal payment kiosk failure is repaired after 1 second; the customer still waits the required 2 seconds before retrying payment.
-3. In the bonus congestion mode, the owner is called when the real payment queue reaches 30. After a configurable 5-second owner response delay, the kiosks are restored so the demonstration can finish. This recovery step is an implementation assumption because the brief specifies the owner call but does not specify what happens afterward.
-4. The brief contains both approximately 60 seconds and approximately 1–2 minutes for overall simulation timing. Individual required activity durations are preserved; overall runtime depends on the random arrival schedule and queueing.
+Purpose
 
-## GUI improvements
+Customers
+
+Runnable + Thread
+
+Represents each customer as an independent concurrent task.
+
+Washers
+
+Semaphore(6) + ReentrantLock
+
+Controls washer capacity and protects resource assignment.
+
+Dryers
+
+Semaphore(4) + ReentrantLock
+
+Controls dryer capacity and protects resource assignment.
+
+Payment kiosks
+
+Semaphore(2) + ReentrantLock
+
+Controls kiosk capacity and protects resource assignment.
+
+Statistics
+
+AtomicInteger / AtomicLong
+
+Provides thread-safe counters and timing totals.
+
+Shared runtime state
+
+AtomicBoolean / AtomicReference
+
+Manages simulation flags and lifecycle state safely.
+
+Customer activities
+
+ConcurrentHashMap
+
+Stores live customer activity information for concurrent access.
+
+Queues and events
+
+ConcurrentLinkedDeque
+
+Stores waiting customers and event history with concurrent access.
+
+Random values
+
+ThreadLocalRandom
+
+Generates timing values and probabilistic failure events.
+
+Resource recovery
+
+ScheduledExecutorService
+
+Schedules delayed repair and recovery tasks.
+
+GUI refresh
+
+Swing Timer + Event Dispatch Thread
+
+Periodically updates the Swing interface.
+
+Important Implementation Assumptions
+
+Washer failure recovery: The brief does not fully define how a failed washer is repaired. This implementation temporarily removes the failed washer from service, repairs it after 1 second, and allows the customer to retry.
+
+Payment kiosk failure recovery: A normal payment kiosk failure is repaired after 1 second, while the affected customer still waits the required 2 seconds before retrying payment.
+
+Congestion-mode recovery: In the bonus congestion scenario, the owner is called when the real payment queue reaches 30 customers. After a configurable 5-second owner response delay, both kiosks are restored so the simulation can continue. The recovery action is an implementation assumption because the brief specifies the owner call but does not define the subsequent recovery behaviour.
+
+Overall simulation duration: The brief contains both approximately 60 seconds and approximately 1–2 minutes for the overall simulation. The specified individual activity durations are preserved; total runtime varies according to random arrivals, resource contention, retries, and queueing.
+
+GUI Features
 
 The light-theme Swing dashboard provides:
 
-- clearly visible RUNNING / STOPPED / COMPLETED / CONGESTION MODE states
-- all 6 washers, 4 dryers, and 2 kiosks as separate cards
-- actual resource status, customer, current operation, and remaining time
-- live customer activity table
-- real washer/dryer/payment queue customer IDs and waiting reasons
-- concurrency/resource utilization counts
-- required and useful thread-safe statistics
-- failure and retry visibility
-- thread-aware event log
-- real completion progress
-- normal and congestion simulation controls
-- Swing Event Dispatch Thread-safe periodic refresh
+RUNNING, STOPPED, COMPLETED, and CONGESTION MODE states
 
-The GUI is only a presentation layer; customer threads and resource coordination live in the simulation/service classes.
+Separate cards for all 6 washers, 4 dryers, and 2 payment kiosks
 
-## Verification performed
+Current resource status, assigned customer, operation, and remaining time
 
-The recreated build was compiled successfully with JDK 21. The Swing GUI was smoke-tested under a headless X server and the light UI layout was checked at 1280×1024. A full normal simulation completed with 50/50 customers served and maximum concurrency of 6 washers and 4 dryers. The congestion scenario reached the real payment-queue threshold of 30 customers, triggered the owner-call event, restored both kiosks, and completed 50/50 customers.
+Live customer activity table
+
+Actual washer, dryer, and payment queue customer IDs and waiting reasons
+
+Current and peak resource utilisation information
+
+Thread-safe customer and resource statistics
+
+Failure and retry visibility
+
+Thread-aware event log
+
+Customer completion progress
+
+Normal and congestion-mode controls
+
+Periodic Swing GUI refresh on the Event Dispatch Thread
+
+The GUI acts as the presentation layer. Customer execution, resource coordination, failure recovery, queues, and statistics are handled by the simulation and service classes.
+
+Verification Results
+
+The current implementation was verified as follows:
+
+The project was compiled successfully using JDK 21.
+
+The Swing GUI was smoke-tested under a headless X server.
+
+The light-theme UI layout was checked at 1280×1024.
+
+A full normal simulation completed with 50/50 customers served.
+
+The normal run reached a maximum concurrent usage of 6 washers and 4 dryers.
+
+The congestion scenario reached the real payment-queue threshold of 30 customers.
+
+The congestion scenario triggered the owner-call event, restored both payment kiosks, and completed with 50/50 customers served.
+
+Project Structure
+
+SmartLaundrySimulation/
+└── src/main/java/com/smartlaundry/
+    ├── config/
+    │   └── SimulationConfig.java
+    ├── gui/
+    │   ├── ActivityPanel.java
+    │   ├── EventLogPanel.java
+    │   ├── MainFrame.java
+    │   ├── QueuePanel.java
+    │   ├── ResourceCard.java
+    │   ├── StatisticsPanel.java
+    │   └── UiTheme.java
+    ├── model/
+    │   ├── Customer.java
+    │   ├── CustomerActivity.java
+    │   ├── Dryer.java
+    │   ├── EventRecord.java
+    │   ├── PaymentKiosk.java
+    │   ├── ResourceSnapshot.java
+    │   ├── ResourceStatus.java
+    │   ├── SimulationStatus.java
+    │   └── WashingMachine.java
+    ├── service/
+    │   ├── LaundryFacility.java
+    │   ├── ResourceManager.java
+    │   ├── SimulationState.java
+    │   └── StatisticsManager.java
+    ├── util/
+    │   ├── Logger.java
+    │   └── RandomUtils.java
+    └── Main.java
+
+Notes
+
+For demonstration and assessment, run the normal mode to show concurrent customer activity, resource limits, queues, statistics, failures, retries, and the event log. Run congestion mode separately to demonstrate payment-queue congestion, the owner-call threshold, and kiosk restoration.

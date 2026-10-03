@@ -15,7 +15,6 @@ public final class SimulationConfig {
     public static final int WASHER_COUNT = 6; // total washer
     public static final int DRYER_COUNT = 4; // total dryer
     public static final int PAYMENT_KIOSK_COUNT = 2; // total payment methods
-
     //** this defines the customers arrival time in between 0 and 3 milliseconds  */
     public static final int ARRIVAL_MIN_MS = 0;
     public static final int ARRIVAL_MAX_MS = 3_000;
@@ -25,7 +24,6 @@ public final class SimulationConfig {
     /**  frying time in between 3 to 5 second */
     public static final int DRY_MIN_MS = 3_000;
     public static final int DRY_MAX_MS = 5_000;
-
      // Payment = 1–2 sec
     public static final int PAYMENT_MIN_MS = 1_000;
     public static final int PAYMENT_MAX_MS = 2_000;
@@ -35,18 +33,10 @@ public final class SimulationConfig {
     // after payment failure it adds extra 2 sec
     public static final int PAYMENT_RETRY_DELAY_MS = 2_000;
 
-   /***  extra assumption like it  used for the failure
-    * during  recovery  1 sec simulation delay hunx
-    * after washer failure it waits 1 sec
-    *
-    *
-    *
-    * */
     public static final int WASHER_REPAIR_DELAY_MS = 1_000;
     public static final int WASHER_RETRY_DELAY_MS = 1_000;
     public static final int PAYMENT_REPAIR_DELAY_MS = 1_000;
     public static final int OWNER_RESPONSE_DELAY_MS = 5_000;
-
     //  extra requirement
     // owner is called after 30 customers are in the payment queue
     public static final int OWNER_CALL_QUEUE_THRESHOLD = 30;

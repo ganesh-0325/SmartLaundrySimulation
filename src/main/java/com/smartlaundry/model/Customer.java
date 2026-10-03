@@ -33,7 +33,8 @@ public final class Customer implements Runnable {
             // shows the events log
             facility.log(customerId, "EXIT", "Customer completed the full laundry journey");
 //            shows completed activity
-            facility.activity(customerId, "COMPLETED", "Exit", "Completed", 0, 0, false);
+            facility.activity(customerId, "COMPLETED", "Exit",
+                    "Completed", 0, 0, false);
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -171,7 +172,8 @@ public final class Customer implements Runnable {
 //                Failure statistic update
                 facility.paymentFailed();
                 facility.log(customerId, "FAILURE", kiosk.getId() + " failed during payment (5% event)");
-                facility.activity(customerId, "RETRYING", kiosk.getId(), "Payment failure - retrying after 2 seconds", System.nanoTime(),
+                facility.activity(customerId, "RETRYING", kiosk.getId(),
+                        "Payment failure - retrying after 2 seconds", System.nanoTime(),
                         System.nanoTime() + SimulationConfig.PAYMENT_RETRY_DELAY_MS * 1_000_000L, true);
                 facility.failPaymentKiosk(kiosk);
                 Thread.sleep(SimulationConfig.PAYMENT_RETRY_DELAY_MS);

@@ -102,6 +102,8 @@ public final class ResourceManager {
                 washerLock.unlock();
             }
 
+
+
         } catch (InterruptedException ex) {
             if (permitAcquired) washerSemaphore.release();
             throw ex;
